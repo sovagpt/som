@@ -89,12 +89,18 @@
             padding: 20px;
         }
 
+        .upload-section {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
         .upload-area {
+            flex: 1;
             border: 2px dashed #808080;
-            padding: 40px;
+            padding: 30px 20px;
             text-align: center;
             background: white;
-            margin-bottom: 20px;
             cursor: pointer;
         }
 
@@ -107,7 +113,7 @@
             margin: 20px auto;
             display: none;
             max-width: 600px;
-            background: #f0f0f0;
+            background: white;
             border: 2px solid;
             border-color: #808080 #ffffff #ffffff #808080;
             overflow: hidden;
@@ -115,23 +121,12 @@
 
         .canvas-wrapper {
             position: relative;
-            width: 100%;
+            width: 600px;
+            height: 600px;
+            margin: 0 auto;
         }
 
-        #profileImage {
-            display: block;
-            width: 100%;
-            height: auto;
-        }
-
-        .sombrero-group {
-            position: absolute;
-            display: none;
-            cursor: move;
-            user-select: none;
-        }
-
-        .sombrero-back {
+        .background-layer {
             position: absolute;
             width: 100%;
             height: 100%;
@@ -140,21 +135,56 @@
             z-index: 1;
         }
 
-        .sombrero-brim {
-            position: absolute;
+        .background-layer img {
             width: 100%;
             height: 100%;
-            left: 0;
-            top: 0;
-            z-index: 3;
+            object-fit: cover;
         }
 
-        .sombrero-back img,
-        .sombrero-brim img {
+        .hat-back {
+            position: absolute;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .hat-back img {
             width: 100%;
             height: 100%;
-            pointer-events: none;
             display: block;
+        }
+
+        .profile-layer {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 3;
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .profile-layer img {
+            display: block;
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .hat-brim {
+            position: absolute;
+            pointer-events: none;
+            z-index: 4;
+        }
+
+        .hat-brim img {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .hat-group {
+            position: absolute;
+            display: none;
+            cursor: move;
         }
 
         .resize-handle {
@@ -166,7 +196,7 @@
             background: #c0c0c0;
             border: 1px solid #000;
             cursor: nwse-resize;
-            z-index: 4;
+            z-index: 5;
         }
 
         .button {
@@ -260,23 +290,39 @@
             </div>
 
             <div class="window-content">
-                <div class="upload-area" id="uploadArea">
-                    <p style="font-size: 16px; margin-bottom: 10px;">📁 Click or drag to upload your profile picture</p>
-                    <p style="font-size: 12px; color: #666;">Supports JPG, PNG, GIF</p>
-                    <input type="file" id="fileInput" accept="image/*">
+                <div class="upload-section">
+                    <div class="upload-area" id="uploadProfile">
+                        <p style="font-size: 14px; margin-bottom: 5px; font-weight: bold;">📸 Profile Picture</p>
+                        <p style="font-size: 11px; color: #666;">Click to upload</p>
+                        <input type="file" id="profileInput" accept="image/*">
+                    </div>
+                    <div class="upload-area" id="uploadBackground">
+                        <p style="font-size: 14px; margin-bottom: 5px; font-weight: bold;">🖼️ Background (Optional)</p>
+                        <p style="font-size: 11px; color: #666;">Click to upload</p>
+                        <input type="file" id="backgroundInput" accept="image/*">
+                    </div>
                 </div>
 
                 <div class="canvas-container" id="canvasContainer">
                     <div class="canvas-wrapper" id="canvasWrapper">
-                        <img id="profileImage" alt="Profile Picture">
+                        <!-- Background layer (z-index 1) -->
+                        <div class="background-layer" id="backgroundLayer"></div>
                         
-                        <div class="sombrero-group" id="sombreroGroup">
-                            <div class="sombrero-back">
-                                <img src="https://cdn.prod.website-files.com/6740d85c4e3daeef29a89470/68dd7e694bb372f3189dc2be_back.png" alt="Sombrero Back">
+                        <!-- Hat group contains back and brim, moves together -->
+                        <div class="hat-group" id="hatGroup">
+                            <!-- Hat back (z-index 2) -->
+                            <div class="hat-back">
+                                <img src="https://cdn.prod.website-files.com/6740d85c4e3daeef29a89470/68dd804ee89f70c0222b1b80_back.png" alt="Hat Back">
                             </div>
                             
-                            <div class="sombrero-brim">
-                                <img src="https://cdn.prod.website-files.com/6740d85c4e3daeef29a89470/68dd7e68f28d3cffde77603f_brim.png" alt="Sombrero Brim">
+                            <!-- Profile pic (z-index 3) - INSIDE hat group but doesn't move -->
+                            <div class="profile-layer" id="profileLayer">
+                                <img id="profileImage" alt="Profile">
+                            </div>
+                            
+                            <!-- Hat brim (z-index 4) -->
+                            <div class="hat-brim">
+                                <img src="https://cdn.prod.website-files.com/6740d85c4e3daeef29a89470/68dd804ed6a524cec2f452e8_brim.png" alt="Hat Brim">
                             </div>
                             
                             <div class="resize-handle"></div>
@@ -287,9 +333,9 @@
                 <div class="button-group">
                     <button class="button" id="addSombreroBtn" disabled>Add Sombrero</button>
                     <button class="button" id="downloadBtn" disabled>Download Image</button>
-                    <button class="button" id="resetBtn" disabled>Reset</button>
+                    <button class="button" id="resetBtn">Reset</button>
                 </div>
-                <div class="loading" id="loading">Processing image...</div>
+                <div class="loading" id="loading">Processing...</div>
             </div>
         </div>
 
@@ -305,12 +351,16 @@
     </div>
 
     <script>
-        const uploadArea = document.getElementById('uploadArea');
-        const fileInput = document.getElementById('fileInput');
-        const profileImage = document.getElementById('profileImage');
+        const uploadProfile = document.getElementById('uploadProfile');
+        const uploadBackground = document.getElementById('uploadBackground');
+        const profileInput = document.getElementById('profileInput');
+        const backgroundInput = document.getElementById('backgroundInput');
         const canvasContainer = document.getElementById('canvasContainer');
         const canvasWrapper = document.getElementById('canvasWrapper');
-        const sombreroGroup = document.getElementById('sombreroGroup');
+        const backgroundLayer = document.getElementById('backgroundLayer');
+        const profileLayer = document.getElementById('profileLayer');
+        const profileImage = document.getElementById('profileImage');
+        const hatGroup = document.getElementById('hatGroup');
         const addSombreroBtn = document.getElementById('addSombreroBtn');
         const downloadBtn = document.getElementById('downloadBtn');
         const resetBtn = document.getElementById('resetBtn');
@@ -322,42 +372,27 @@
         let isDragging = false;
         let isResizing = false;
         let startX, startY, startWidth, startHeight;
-        let removedBgUrl = null;
+        let profileLoaded = false;
 
-        // Upload handlers
-        uploadArea.addEventListener('click', () => fileInput.click());
-        
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.style.background = '#e0e0e0';
-        });
-
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.style.background = 'white';
-        });
-
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.style.background = 'white';
-            const file = e.dataTransfer.files[0];
-            if (file && file.type.startsWith('image/')) {
-                loadImage(file);
-            }
-        });
-
-        fileInput.addEventListener('change', (e) => {
+        // Profile upload
+        uploadProfile.addEventListener('click', () => profileInput.click());
+        profileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
-            if (file) {
-                loadImage(file);
-            }
+            if (file) loadProfileImage(file);
         });
 
-        async function loadImage(file) {
+        // Background upload
+        uploadBackground.addEventListener('click', () => backgroundInput.click());
+        backgroundInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) loadBackgroundImage(file);
+        });
+
+        async function loadProfileImage(file) {
             loading.style.display = 'block';
             loading.textContent = 'Removing background...';
             
             try {
-                // Remove background using remove.bg API
                 const formData = new FormData();
                 formData.append('image_file', file);
                 formData.append('size', 'auto');
@@ -370,61 +405,78 @@
                     body: formData
                 });
 
-                if (!response.ok) {
-                    throw new Error('Failed to remove background');
-                }
+                if (!response.ok) throw new Error('Failed to remove background');
 
                 const blob = await response.blob();
-                removedBgUrl = URL.createObjectURL(blob);
+                const url = URL.createObjectURL(blob);
                 
-                // Set the removed background image as the main profile image
-                profileImage.src = removedBgUrl;
+                profileImage.src = url;
                 profileImage.onload = () => {
                     canvasContainer.style.display = 'block';
+                    profileLoaded = true;
                     addSombreroBtn.disabled = false;
                     downloadBtn.disabled = false;
-                    resetBtn.disabled = false;
                     loading.style.display = 'none';
                 };
 
             } catch (error) {
-                console.error('Error removing background:', error);
-                alert('Failed to remove background. Please try again or check your API key.');
+                console.error('Error:', error);
+                alert('Failed to remove background. Please try again.');
                 loading.style.display = 'none';
             }
         }
 
+        function loadBackgroundImage(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                backgroundLayer.innerHTML = `<img src="${e.target.result}" alt="Background">`;
+            };
+            reader.readAsDataURL(file);
+        }
+
         // Add sombrero
         addSombreroBtn.addEventListener('click', () => {
-            sombreroGroup.style.display = 'block';
+            if (!profileLoaded) return;
             
-            // Set initial size and position for the sombrero
-            const size = 250;
-            sombreroGroup.style.width = size + 'px';
-            sombreroGroup.style.height = size + 'px';
-            sombreroGroup.style.left = '50%';
-            sombreroGroup.style.top = '10%';
-            sombreroGroup.style.transform = 'translateX(-50%)';
+            hatGroup.style.display = 'block';
+            hatGroup.style.width = '300px';
+            hatGroup.style.height = '300px';
+            hatGroup.style.left = '150px';
+            hatGroup.style.top = '100px';
+            
+            // Position hat layers to fill the group
+            const hatBack = hatGroup.querySelector('.hat-back');
+            const hatBrim = hatGroup.querySelector('.hat-brim');
+            
+            hatBack.style.width = '100%';
+            hatBack.style.height = '100%';
+            hatBack.style.left = '0';
+            hatBack.style.top = '0';
+            
+            hatBrim.style.width = '100%';
+            hatBrim.style.height = '100%';
+            hatBrim.style.left = '0';
+            hatBrim.style.top = '0';
         });
 
-        // Drag sombrero
-        sombreroGroup.addEventListener('mousedown', (e) => {
+        // Drag hat
+        hatGroup.addEventListener('mousedown', (e) => {
             if (e.target === resizeHandle) return;
             isDragging = true;
-            const rect = sombreroGroup.getBoundingClientRect();
+            const rect = hatGroup.getBoundingClientRect();
             startX = e.clientX - rect.left;
             startY = e.clientY - rect.top;
-            sombreroGroup.style.cursor = 'grabbing';
+            hatGroup.style.cursor = 'grabbing';
         });
 
-        // Resize sombrero
+        // Resize hat
         resizeHandle.addEventListener('mousedown', (e) => {
             e.stopPropagation();
             isResizing = true;
             startX = e.clientX;
             startY = e.clientY;
-            startWidth = sombreroGroup.offsetWidth;
-            startHeight = sombreroGroup.offsetHeight;
+            startWidth = hatGroup.offsetWidth;
+            startHeight = hatGroup.offsetHeight;
         });
 
         document.addEventListener('mousemove', (e) => {
@@ -433,36 +485,31 @@
                 let newLeft = e.clientX - containerRect.left - startX;
                 let newTop = e.clientY - containerRect.top - startY;
                 
-                newLeft = Math.max(-100, Math.min(newLeft, containerRect.width + 100));
-                newTop = Math.max(-100, Math.min(newTop, containerRect.height + 100));
-                
-                sombreroGroup.style.left = newLeft + 'px';
-                sombreroGroup.style.top = newTop + 'px';
-                sombreroGroup.style.transform = 'none';
+                hatGroup.style.left = newLeft + 'px';
+                hatGroup.style.top = newTop + 'px';
             } else if (isResizing) {
                 const dx = e.clientX - startX;
                 const dy = e.clientY - startY;
                 const newSize = Math.max(100, startWidth + Math.max(dx, dy));
                 
-                sombreroGroup.style.width = newSize + 'px';
-                sombreroGroup.style.height = newSize + 'px';
+                hatGroup.style.width = newSize + 'px';
+                hatGroup.style.height = newSize + 'px';
             }
         });
 
         document.addEventListener('mouseup', () => {
             isDragging = false;
             isResizing = false;
-            sombreroGroup.style.cursor = 'move';
+            hatGroup.style.cursor = 'move';
         });
 
-        // Download using html2canvas
+        // Download
         downloadBtn.addEventListener('click', async () => {
             loading.style.display = 'block';
             loading.textContent = 'Processing image...';
             downloadBtn.disabled = true;
             
             try {
-                // Hide resize handle before capture
                 resizeHandle.style.display = 'none';
                 
                 const captureCanvas = await html2canvas(canvasWrapper, {
@@ -472,7 +519,6 @@
                     scale: 2
                 });
                 
-                // Show resize handle again
                 resizeHandle.style.display = 'block';
                 
                 const link = document.createElement('a');
@@ -481,7 +527,7 @@
                 link.click();
             } catch (error) {
                 console.error('Download error:', error);
-                alert('Error downloading image. Please try again.');
+                alert('Error downloading image.');
             } finally {
                 loading.style.display = 'none';
                 downloadBtn.disabled = false;
@@ -490,18 +536,15 @@
 
         // Reset
         resetBtn.addEventListener('click', () => {
-            fileInput.value = '';
+            profileInput.value = '';
+            backgroundInput.value = '';
             profileImage.src = '';
+            backgroundLayer.innerHTML = '';
             canvasContainer.style.display = 'none';
-            sombreroGroup.style.display = 'none';
+            hatGroup.style.display = 'none';
             addSombreroBtn.disabled = true;
             downloadBtn.disabled = true;
-            resetBtn.disabled = true;
-            
-            if (removedBgUrl) {
-                URL.revokeObjectURL(removedBgUrl);
-                removedBgUrl = null;
-            }
+            profileLoaded = false;
         });
     </script>
 </body>
