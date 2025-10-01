@@ -124,14 +124,25 @@
             height: auto;
         }
 
-        .sombrero {
+        .sombrero-layer {
             position: absolute;
             cursor: move;
             user-select: none;
+        }
+
+        .sombrero-back {
+            z-index: 5;
+        }
+
+        .profile-pic {
             z-index: 10;
         }
 
-        .sombrero img {
+        .sombrero-brim {
+            z-index: 15;
+        }
+
+        .sombrero-layer img {
             width: 100%;
             height: 100%;
             pointer-events: none;
@@ -147,6 +158,7 @@
             background: #c0c0c0;
             border: 1px solid #000;
             cursor: nwse-resize;
+            z-index: 20;
         }
 
         .button {
@@ -218,6 +230,11 @@
             font-size: 12px;
             color: #000080;
         }
+
+        .sombrero-group {
+            position: absolute;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -249,8 +266,20 @@
                 <div class="canvas-container" id="canvasContainer">
                     <div class="canvas-wrapper" id="canvasWrapper">
                         <img id="canvas" />
-                        <div class="sombrero" id="sombrero" style="display: none;">
-                            <img src="https://cdn.prod.website-files.com/6740d85c4e3daeef29a89470/68dd7a9015f8d2337492a823_5bbe3942895b2.png" alt="Sombrero">
+                        
+                        <div class="sombrero-group" id="sombreroGroup">
+                            <div class="sombrero-layer sombrero-back" id="sombreroBack">
+                                <img src="https://cdn.prod.website-files.com/6740d85c4e3daeef29a89470/68dd7e694bb372f3189dc2be_back.png" alt="Sombrero Back">
+                            </div>
+                            
+                            <div class="sombrero-layer profile-pic" id="profilePic">
+                                <img id="profilePicImg" alt="Profile Picture">
+                            </div>
+                            
+                            <div class="sombrero-layer sombrero-brim" id="sombreroBrim">
+                                <img src="https://cdn.prod.website-files.com/6740d85c4e3daeef29a89470/68dd7e68f28d3cffde77603f_brim.png" alt="Sombrero Brim">
+                            </div>
+                            
                             <div class="resize-handle"></div>
                         </div>
                     </div>
@@ -282,17 +311,21 @@
         const canvas = document.getElementById('canvas');
         const canvasContainer = document.getElementById('canvasContainer');
         const canvasWrapper = document.getElementById('canvasWrapper');
-        const sombrero = document.getElementById('sombrero');
+        const sombreroGroup = document.getElementById('sombreroGroup');
+        const profilePicImg = document.getElementById('profilePicImg');
         const addSombreroBtn = document.getElementById('addSombreroBtn');
         const downloadBtn = document.getElementById('downloadBtn');
         const resetBtn = document.getElementById('resetBtn');
         const loading = document.getElementById('loading');
-        const resizeHandle = sombrero.querySelector('.resize-handle');
+        const resizeHandle = document.querySelector('.resize-handle');
 
-        let uploadedImage = null;
+        const REMOVE_BG_API_KEY = 'DHAX5J5EvSV7aiFKkpkV8zP3';
+        
+        let originalImageData = null;
+        let removedBgImageData = null;
         let isDragging = false;
         let isResizing = false;
-        let startX, startY, startWidth, startHeight, startLeft, startTop;
+        let startX, startY, startWidth, startHeight;
 
         // Upload handlers
         uploadArea.addEventListener('click', () => fileInput.click());
@@ -322,49 +355,98 @@
             }
         });
 
-        function loadImage(file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                canvas.src = e.target.result;
-                canvas.onload = () => {
-                    canvasContainer.style.display = 'block';
-                    addSombreroBtn.disabled = false;
-                    downloadBtn.disabled = false;
-                    resetBtn.disabled = false;
+        async function loadImage(file) {
+            loading.style.display = 'block';
+            loading.textContent = 'Removing background...';
+            
+            try {
+                // Remove background using remove.bg API
+                const formData = new FormData();
+                formData.append('image_file', file);
+                formData.append('size', 'auto');
+
+                const response = await fetch('https://api.remove.bg/v1.0/removebg', {
+                    method: 'POST',
+                    headers: {
+                        'X-Api-Key': REMOVE_BG_API_KEY,
+                    },
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to remove background');
+                }
+
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                
+                // Load the removed background image
+                profilePicImg.src = url;
+                removedBgImageData = url;
+                
+                // Also load original image to canvas
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    canvas.src = e.target.result;
+                    originalImageData = e.target.result;
+                    canvas.onload = () => {
+                        canvasContainer.style.display = 'block';
+                        addSombreroBtn.disabled = false;
+                        downloadBtn.disabled = false;
+                        resetBtn.disabled = false;
+                        loading.style.display = 'none';
+                    };
                 };
-            };
-            reader.readAsDataURL(file);
+                reader.readAsDataURL(file);
+
+            } catch (error) {
+                console.error('Error removing background:', error);
+                alert('Failed to remove background. Please try again or check your API key.');
+                loading.style.display = 'none';
+            }
         }
 
         // Add sombrero
         addSombreroBtn.addEventListener('click', () => {
-            sombrero.style.display = 'block';
-            sombrero.style.width = '150px';
-            sombrero.style.height = '150px';
-            sombrero.style.left = '50%';
-            sombrero.style.top = '20%';
-            sombrero.style.transform = 'translateX(-50%)';
+            sombreroGroup.style.display = 'block';
+            
+            // Set initial size and position for the entire group
+            const size = 250;
+            sombreroGroup.style.width = size + 'px';
+            sombreroGroup.style.height = size + 'px';
+            sombreroGroup.style.left = '50%';
+            sombreroGroup.style.top = '10%';
+            sombreroGroup.style.transform = 'translateX(-50%)';
+            
+            // Position all layers to fill the group
+            const layers = sombreroGroup.querySelectorAll('.sombrero-layer');
+            layers.forEach(layer => {
+                layer.style.width = '100%';
+                layer.style.height = '100%';
+                layer.style.left = '0';
+                layer.style.top = '0';
+            });
         });
 
-        // Drag sombrero
-        sombrero.addEventListener('mousedown', (e) => {
+        // Drag sombrero group
+        sombreroGroup.addEventListener('mousedown', (e) => {
             if (e.target === resizeHandle) return;
             isDragging = true;
-            const rect = sombrero.getBoundingClientRect();
+            const rect = sombreroGroup.getBoundingClientRect();
             const containerRect = canvasWrapper.getBoundingClientRect();
             startX = e.clientX - rect.left;
             startY = e.clientY - rect.top;
-            sombrero.style.cursor = 'grabbing';
+            sombreroGroup.style.cursor = 'grabbing';
         });
 
-        // Resize sombrero
+        // Resize sombrero group
         resizeHandle.addEventListener('mousedown', (e) => {
             e.stopPropagation();
             isResizing = true;
             startX = e.clientX;
             startY = e.clientY;
-            startWidth = sombrero.offsetWidth;
-            startHeight = sombrero.offsetHeight;
+            startWidth = sombreroGroup.offsetWidth;
+            startHeight = sombreroGroup.offsetHeight;
         });
 
         document.addEventListener('mousemove', (e) => {
@@ -373,32 +455,32 @@
                 let newLeft = e.clientX - containerRect.left - startX;
                 let newTop = e.clientY - containerRect.top - startY;
                 
-                newLeft = Math.max(0, Math.min(newLeft, containerRect.width - sombrero.offsetWidth));
-                newTop = Math.max(0, Math.min(newTop, containerRect.height - sombrero.offsetHeight));
+                newLeft = Math.max(0, Math.min(newLeft, containerRect.width - sombreroGroup.offsetWidth));
+                newTop = Math.max(0, Math.min(newTop, containerRect.height - sombreroGroup.offsetHeight));
                 
-                sombrero.style.left = newLeft + 'px';
-                sombrero.style.top = newTop + 'px';
-                sombrero.style.transform = 'none';
+                sombreroGroup.style.left = newLeft + 'px';
+                sombreroGroup.style.top = newTop + 'px';
+                sombreroGroup.style.transform = 'none';
             } else if (isResizing) {
                 const dx = e.clientX - startX;
                 const dy = e.clientY - startY;
-                const newWidth = Math.max(50, startWidth + dx);
-                const newHeight = Math.max(50, startHeight + dy);
+                const newSize = Math.max(100, startWidth + Math.max(dx, dy));
                 
-                sombrero.style.width = newWidth + 'px';
-                sombrero.style.height = newHeight + 'px';
+                sombreroGroup.style.width = newSize + 'px';
+                sombreroGroup.style.height = newSize + 'px';
             }
         });
 
         document.addEventListener('mouseup', () => {
             isDragging = false;
             isResizing = false;
-            sombrero.style.cursor = 'move';
+            sombreroGroup.style.cursor = 'move';
         });
 
         // Download using html2canvas
         downloadBtn.addEventListener('click', async () => {
             loading.style.display = 'block';
+            loading.textContent = 'Processing image...';
             downloadBtn.disabled = true;
             
             try {
@@ -432,11 +514,17 @@
         resetBtn.addEventListener('click', () => {
             fileInput.value = '';
             canvas.src = '';
+            profilePicImg.src = '';
             canvasContainer.style.display = 'none';
-            sombrero.style.display = 'none';
+            sombreroGroup.style.display = 'none';
             addSombreroBtn.disabled = true;
             downloadBtn.disabled = true;
             resetBtn.disabled = true;
+            
+            if (removedBgImageData) {
+                URL.revokeObjectURL(removedBgImageData);
+                removedBgImageData = null;
+            }
         });
     </script>
 </body>
