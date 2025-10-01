@@ -126,6 +126,7 @@
             margin: 0 auto;
         }
 
+        /* Background layer - z-index 1 */
         .background-layer {
             position: absolute;
             width: 100%;
@@ -141,26 +142,28 @@
             object-fit: cover;
         }
 
-        .hat-back {
+        /* Hat back - z-index 2 */
+        .hat-back-layer {
             position: absolute;
             pointer-events: none;
             z-index: 2;
         }
 
-        .hat-back img {
+        .hat-back-layer img {
             width: 100%;
             height: 100%;
             display: block;
         }
 
+        /* Profile pic - z-index 3 - STATIC, STAYS IN CENTER */
         .profile-layer {
             position: absolute;
             left: 50%;
             top: 50%;
             transform: translate(-50%, -50%);
             z-index: 3;
-            max-width: 100%;
-            max-height: 100%;
+            max-width: 90%;
+            max-height: 90%;
         }
 
         .profile-layer img {
@@ -169,22 +172,25 @@
             max-height: 100%;
         }
 
-        .hat-brim {
+        /* Hat brim - z-index 4 */
+        .hat-brim-layer {
             position: absolute;
             pointer-events: none;
             z-index: 4;
         }
 
-        .hat-brim img {
+        .hat-brim-layer img {
             width: 100%;
             height: 100%;
             display: block;
         }
 
+        /* Hat group - contains only the two hat layers */
         .hat-group {
             position: absolute;
             display: none;
             cursor: move;
+            z-index: 10;
         }
 
         .resize-handle {
@@ -308,20 +314,20 @@
                         <!-- Background layer (z-index 1) -->
                         <div class="background-layer" id="backgroundLayer"></div>
                         
-                        <!-- Hat group contains back and brim, moves together -->
+                        <!-- Profile pic (z-index 3) - STATIC IN CENTER -->
+                        <div class="profile-layer" id="profileLayer">
+                            <img id="profileImage" alt="Profile">
+                        </div>
+                        
+                        <!-- Hat group - ONLY contains back and brim, moveable -->
                         <div class="hat-group" id="hatGroup">
                             <!-- Hat back (z-index 2) -->
-                            <div class="hat-back">
+                            <div class="hat-back-layer">
                                 <img src="https://cdn.prod.website-files.com/6740d85c4e3daeef29a89470/68dd804ee89f70c0222b1b80_back.png" alt="Hat Back">
                             </div>
                             
-                            <!-- Profile pic (z-index 3) - INSIDE hat group but doesn't move -->
-                            <div class="profile-layer" id="profileLayer">
-                                <img id="profileImage" alt="Profile">
-                            </div>
-                            
                             <!-- Hat brim (z-index 4) -->
-                            <div class="hat-brim">
+                            <div class="hat-brim-layer">
                                 <img src="https://cdn.prod.website-files.com/6740d85c4e3daeef29a89470/68dd804ed6a524cec2f452e8_brim.png" alt="Hat Brim">
                             </div>
                             
@@ -434,7 +440,7 @@
             reader.readAsDataURL(file);
         }
 
-        // Add sombrero
+        // Add sombrero - only shows the hat layers, profile stays separate
         addSombreroBtn.addEventListener('click', () => {
             if (!profileLoaded) return;
             
@@ -442,11 +448,11 @@
             hatGroup.style.width = '300px';
             hatGroup.style.height = '300px';
             hatGroup.style.left = '150px';
-            hatGroup.style.top = '100px';
+            hatGroup.style.top = '50px';
             
             // Position hat layers to fill the group
-            const hatBack = hatGroup.querySelector('.hat-back');
-            const hatBrim = hatGroup.querySelector('.hat-brim');
+            const hatBack = hatGroup.querySelector('.hat-back-layer');
+            const hatBrim = hatGroup.querySelector('.hat-brim-layer');
             
             hatBack.style.width = '100%';
             hatBack.style.height = '100%';
@@ -459,17 +465,18 @@
             hatBrim.style.top = '0';
         });
 
-        // Drag hat
+        // Drag hat group (only the hat, not the profile)
         hatGroup.addEventListener('mousedown', (e) => {
             if (e.target === resizeHandle) return;
             isDragging = true;
             const rect = hatGroup.getBoundingClientRect();
+            const containerRect = canvasWrapper.getBoundingClientRect();
             startX = e.clientX - rect.left;
             startY = e.clientY - rect.top;
             hatGroup.style.cursor = 'grabbing';
         });
 
-        // Resize hat
+        // Resize hat group
         resizeHandle.addEventListener('mousedown', (e) => {
             e.stopPropagation();
             isResizing = true;
