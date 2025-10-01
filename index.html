@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sombreroify</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -109,11 +110,17 @@
             background: white;
             border: 2px solid;
             border-color: #808080 #ffffff #ffffff #808080;
+            overflow: hidden;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
         }
 
         #canvas {
             display: block;
-            max-width: 100%;
+            width: 100%;
             height: auto;
         }
 
@@ -121,12 +128,14 @@
             position: absolute;
             cursor: move;
             user-select: none;
+            z-index: 10;
         }
 
         .sombrero img {
             width: 100%;
             height: 100%;
             pointer-events: none;
+            display: block;
         }
 
         .resize-handle {
@@ -201,6 +210,14 @@
         input[type="file"] {
             display: none;
         }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #000080;
+        }
     </style>
 </head>
 <body>
@@ -230,10 +247,12 @@
                 </div>
 
                 <div class="canvas-container" id="canvasContainer">
-                    <canvas id="canvas"></canvas>
-                    <div class="sombrero" id="sombrero" style="display: none;">
-                        <img src="https://cdn.prod.website-files.com/6740d85c4e3daeef29a89470/68dd7a9015f8d2337492a823_5bbe3942895b2.png" alt="Sombrero">
-                        <div class="resize-handle"></div>
+                    <div class="canvas-wrapper" id="canvasWrapper">
+                        <img id="canvas" />
+                        <div class="sombrero" id="sombrero" style="display: none;">
+                            <img src="https://cdn.prod.website-files.com/6740d85c4e3daeef29a89470/68dd7a9015f8d2337492a823_5bbe3942895b2.png" alt="Sombrero">
+                            <div class="resize-handle"></div>
+                        </div>
                     </div>
                 </div>
 
@@ -242,6 +261,7 @@
                     <button class="button" id="downloadBtn" disabled>Download Image</button>
                     <button class="button" id="resetBtn" disabled>Reset</button>
                 </div>
+                <div class="loading" id="loading">Processing image...</div>
             </div>
         </div>
 
@@ -260,12 +280,13 @@
         const uploadArea = document.getElementById('uploadArea');
         const fileInput = document.getElementById('fileInput');
         const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
         const canvasContainer = document.getElementById('canvasContainer');
+        const canvasWrapper = document.getElementById('canvasWrapper');
         const sombrero = document.getElementById('sombrero');
         const addSombreroBtn = document.getElementById('addSombreroBtn');
         const downloadBtn = document.getElementById('downloadBtn');
         const resetBtn = document.getElementById('resetBtn');
+        const loading = document.getElementById('loading');
         const resizeHandle = sombrero.querySelector('.resize-handle');
 
         let uploadedImage = null;
@@ -304,21 +325,13 @@
         function loadImage(file) {
             const reader = new FileReader();
             reader.onload = (e) => {
-                const img = new Image();
-                img.onload = () => {
-                    uploadedImage = img;
-                    const maxWidth = 600;
-                    const scale = Math.min(1, maxWidth / img.width);
-                    canvas.width = img.width * scale;
-                    canvas.height = img.height * scale;
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    
+                canvas.src = e.target.result;
+                canvas.onload = () => {
                     canvasContainer.style.display = 'block';
                     addSombreroBtn.disabled = false;
                     downloadBtn.disabled = false;
                     resetBtn.disabled = false;
                 };
-                img.src = e.target.result;
             };
             reader.readAsDataURL(file);
         }
@@ -338,7 +351,7 @@
             if (e.target === resizeHandle) return;
             isDragging = true;
             const rect = sombrero.getBoundingClientRect();
-            const containerRect = canvasContainer.getBoundingClientRect();
+            const containerRect = canvasWrapper.getBoundingClientRect();
             startX = e.clientX - rect.left;
             startY = e.clientY - rect.top;
             sombrero.style.cursor = 'grabbing';
@@ -356,7 +369,7 @@
 
         document.addEventListener('mousemove', (e) => {
             if (isDragging) {
-                const containerRect = canvasContainer.getBoundingClientRect();
+                const containerRect = canvasWrapper.getBoundingClientRect();
                 let newLeft = e.clientX - containerRect.left - startX;
                 let newTop = e.clientY - containerRect.top - startY;
                 
@@ -383,41 +396,42 @@
             sombrero.style.cursor = 'move';
         });
 
-        // Download
-        downloadBtn.addEventListener('click', () => {
-            const finalCanvas = document.createElement('canvas');
-            finalCanvas.width = canvas.width;
-            finalCanvas.height = canvas.height;
-            const finalCtx = finalCanvas.getContext('2d');
+        // Download using html2canvas
+        downloadBtn.addEventListener('click', async () => {
+            loading.style.display = 'block';
+            downloadBtn.disabled = true;
             
-            finalCtx.drawImage(canvas, 0, 0);
-            
-            if (sombrero.style.display === 'block') {
-                const sombreroImg = sombrero.querySelector('img');
-                const rect = sombrero.getBoundingClientRect();
-                const containerRect = canvasContainer.getBoundingClientRect();
+            try {
+                // Hide resize handle before capture
+                resizeHandle.style.display = 'none';
                 
-                const scaleX = canvas.width / containerRect.width;
-                const scaleY = canvas.height / containerRect.height;
+                const captureCanvas = await html2canvas(canvasWrapper, {
+                    backgroundColor: null,
+                    useCORS: true,
+                    allowTaint: true,
+                    scale: 2
+                });
                 
-                const x = (rect.left - containerRect.left) * scaleX;
-                const y = (rect.top - containerRect.top) * scaleY;
-                const w = rect.width * scaleX;
-                const h = rect.height * scaleY;
+                // Show resize handle again
+                resizeHandle.style.display = 'block';
                 
-                finalCtx.drawImage(sombreroImg, x, y, w, h);
+                const link = document.createElement('a');
+                link.download = 'sombreroified.png';
+                link.href = captureCanvas.toDataURL('image/png');
+                link.click();
+            } catch (error) {
+                console.error('Download error:', error);
+                alert('Error downloading image. Please try again.');
+            } finally {
+                loading.style.display = 'none';
+                downloadBtn.disabled = false;
             }
-            
-            const link = document.createElement('a');
-            link.download = 'sombreroified.png';
-            link.href = finalCanvas.toDataURL();
-            link.click();
         });
 
         // Reset
         resetBtn.addEventListener('click', () => {
             fileInput.value = '';
-            uploadedImage = null;
+            canvas.src = '';
             canvasContainer.style.display = 'none';
             sombrero.style.display = 'none';
             addSombreroBtn.disabled = true;
