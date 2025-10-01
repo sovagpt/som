@@ -107,7 +107,7 @@
             margin: 20px auto;
             display: none;
             max-width: 600px;
-            background: white;
+            background: #f0f0f0;
             border: 2px solid;
             border-color: #808080 #ffffff #ffffff #808080;
             overflow: hidden;
@@ -118,31 +118,39 @@
             width: 100%;
         }
 
-        #canvas {
+        #profileImage {
             display: block;
             width: 100%;
             height: auto;
         }
 
-        .sombrero-layer {
+        .sombrero-group {
             position: absolute;
+            display: none;
             cursor: move;
             user-select: none;
         }
 
         .sombrero-back {
-            z-index: 5;
-        }
-
-        .profile-pic {
-            z-index: 10;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            left: 0;
+            top: 0;
+            z-index: 1;
         }
 
         .sombrero-brim {
-            z-index: 15;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            left: 0;
+            top: 0;
+            z-index: 3;
         }
 
-        .sombrero-layer img {
+        .sombrero-back img,
+        .sombrero-brim img {
             width: 100%;
             height: 100%;
             pointer-events: none;
@@ -158,7 +166,7 @@
             background: #c0c0c0;
             border: 1px solid #000;
             cursor: nwse-resize;
-            z-index: 20;
+            z-index: 4;
         }
 
         .button {
@@ -230,11 +238,6 @@
             font-size: 12px;
             color: #000080;
         }
-
-        .sombrero-group {
-            position: absolute;
-            display: none;
-        }
     </style>
 </head>
 <body>
@@ -265,18 +268,14 @@
 
                 <div class="canvas-container" id="canvasContainer">
                     <div class="canvas-wrapper" id="canvasWrapper">
-                        <img id="canvas" />
+                        <img id="profileImage" alt="Profile Picture">
                         
                         <div class="sombrero-group" id="sombreroGroup">
-                            <div class="sombrero-layer sombrero-back" id="sombreroBack">
+                            <div class="sombrero-back">
                                 <img src="https://cdn.prod.website-files.com/6740d85c4e3daeef29a89470/68dd7e694bb372f3189dc2be_back.png" alt="Sombrero Back">
                             </div>
                             
-                            <div class="sombrero-layer profile-pic" id="profilePic">
-                                <img id="profilePicImg" alt="Profile Picture">
-                            </div>
-                            
-                            <div class="sombrero-layer sombrero-brim" id="sombreroBrim">
+                            <div class="sombrero-brim">
                                 <img src="https://cdn.prod.website-files.com/6740d85c4e3daeef29a89470/68dd7e68f28d3cffde77603f_brim.png" alt="Sombrero Brim">
                             </div>
                             
@@ -308,11 +307,10 @@
     <script>
         const uploadArea = document.getElementById('uploadArea');
         const fileInput = document.getElementById('fileInput');
-        const canvas = document.getElementById('canvas');
+        const profileImage = document.getElementById('profileImage');
         const canvasContainer = document.getElementById('canvasContainer');
         const canvasWrapper = document.getElementById('canvasWrapper');
         const sombreroGroup = document.getElementById('sombreroGroup');
-        const profilePicImg = document.getElementById('profilePicImg');
         const addSombreroBtn = document.getElementById('addSombreroBtn');
         const downloadBtn = document.getElementById('downloadBtn');
         const resetBtn = document.getElementById('resetBtn');
@@ -321,11 +319,10 @@
 
         const REMOVE_BG_API_KEY = 'DHAX5J5EvSV7aiFKkpkV8zP3';
         
-        let originalImageData = null;
-        let removedBgImageData = null;
         let isDragging = false;
         let isResizing = false;
         let startX, startY, startWidth, startHeight;
+        let removedBgUrl = null;
 
         // Upload handlers
         uploadArea.addEventListener('click', () => fileInput.click());
@@ -378,26 +375,17 @@
                 }
 
                 const blob = await response.blob();
-                const url = URL.createObjectURL(blob);
+                removedBgUrl = URL.createObjectURL(blob);
                 
-                // Load the removed background image
-                profilePicImg.src = url;
-                removedBgImageData = url;
-                
-                // Also load original image to canvas
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    canvas.src = e.target.result;
-                    originalImageData = e.target.result;
-                    canvas.onload = () => {
-                        canvasContainer.style.display = 'block';
-                        addSombreroBtn.disabled = false;
-                        downloadBtn.disabled = false;
-                        resetBtn.disabled = false;
-                        loading.style.display = 'none';
-                    };
+                // Set the removed background image as the main profile image
+                profileImage.src = removedBgUrl;
+                profileImage.onload = () => {
+                    canvasContainer.style.display = 'block';
+                    addSombreroBtn.disabled = false;
+                    downloadBtn.disabled = false;
+                    resetBtn.disabled = false;
+                    loading.style.display = 'none';
                 };
-                reader.readAsDataURL(file);
 
             } catch (error) {
                 console.error('Error removing background:', error);
@@ -410,36 +398,26 @@
         addSombreroBtn.addEventListener('click', () => {
             sombreroGroup.style.display = 'block';
             
-            // Set initial size and position for the entire group
+            // Set initial size and position for the sombrero
             const size = 250;
             sombreroGroup.style.width = size + 'px';
             sombreroGroup.style.height = size + 'px';
             sombreroGroup.style.left = '50%';
             sombreroGroup.style.top = '10%';
             sombreroGroup.style.transform = 'translateX(-50%)';
-            
-            // Position all layers to fill the group
-            const layers = sombreroGroup.querySelectorAll('.sombrero-layer');
-            layers.forEach(layer => {
-                layer.style.width = '100%';
-                layer.style.height = '100%';
-                layer.style.left = '0';
-                layer.style.top = '0';
-            });
         });
 
-        // Drag sombrero group
+        // Drag sombrero
         sombreroGroup.addEventListener('mousedown', (e) => {
             if (e.target === resizeHandle) return;
             isDragging = true;
             const rect = sombreroGroup.getBoundingClientRect();
-            const containerRect = canvasWrapper.getBoundingClientRect();
             startX = e.clientX - rect.left;
             startY = e.clientY - rect.top;
             sombreroGroup.style.cursor = 'grabbing';
         });
 
-        // Resize sombrero group
+        // Resize sombrero
         resizeHandle.addEventListener('mousedown', (e) => {
             e.stopPropagation();
             isResizing = true;
@@ -455,8 +433,8 @@
                 let newLeft = e.clientX - containerRect.left - startX;
                 let newTop = e.clientY - containerRect.top - startY;
                 
-                newLeft = Math.max(0, Math.min(newLeft, containerRect.width - sombreroGroup.offsetWidth));
-                newTop = Math.max(0, Math.min(newTop, containerRect.height - sombreroGroup.offsetHeight));
+                newLeft = Math.max(-100, Math.min(newLeft, containerRect.width + 100));
+                newTop = Math.max(-100, Math.min(newTop, containerRect.height + 100));
                 
                 sombreroGroup.style.left = newLeft + 'px';
                 sombreroGroup.style.top = newTop + 'px';
@@ -513,17 +491,16 @@
         // Reset
         resetBtn.addEventListener('click', () => {
             fileInput.value = '';
-            canvas.src = '';
-            profilePicImg.src = '';
+            profileImage.src = '';
             canvasContainer.style.display = 'none';
             sombreroGroup.style.display = 'none';
             addSombreroBtn.disabled = true;
             downloadBtn.disabled = true;
             resetBtn.disabled = true;
             
-            if (removedBgImageData) {
-                URL.revokeObjectURL(removedBgImageData);
-                removedBgImageData = null;
+            if (removedBgUrl) {
+                URL.revokeObjectURL(removedBgUrl);
+                removedBgUrl = null;
             }
         });
     </script>
