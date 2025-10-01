@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sombreroify</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'MS Sans Serif', Arial, sans-serif;
+            background: #008080;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .desktop {
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .header-logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header-logo img {
+            max-width: 400px;
+            width: 100%;
+            height: auto;
+        }
+
+        .window {
+            background: #c0c0c0;
+            border: 2px solid;
+            border-color: #ffffff #000000 #000000 #ffffff;
+            box-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+        }
+
+        .title-bar {
+            background: linear-gradient(to right, #000080, #1084d0);
+            padding: 3px 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .title-text {
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .title-buttons {
+            display: flex;
+            gap: 2px;
+        }
+
+        .title-button {
+            width: 18px;
+            height: 18px;
+            background: #c0c0c0;
+            border: 1px solid;
+            border-color: #ffffff #000000 #000000 #ffffff;
+            font-size: 12px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .title-button:active {
+            border-color: #000000 #ffffff #ffffff #000000;
+        }
+
+        .window-content {
+            padding: 20px;
+        }
+
+        .upload-area {
+            border: 2px dashed #808080;
+            padding: 40px;
+            text-align: center;
+            background: white;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            background: #f0f0f0;
+        }
+
+        .canvas-container {
+            position: relative;
+            margin: 20px auto;
+            display: none;
+            max-width: 600px;
+            background: white;
+            border: 2px solid;
+            border-color: #808080 #ffffff #ffffff #808080;
+        }
+
+        #canvas {
+            display: block;
+            max-width: 100%;
+            height: auto;
+        }
+
+        .sombrero {
+            position: absolute;
+            cursor: move;
+            user-select: none;
+        }
+
+        .sombrero img {
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .resize-handle {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 20px;
+            height: 20px;
+            background: #c0c0c0;
+            border: 1px solid #000;
+            cursor: nwse-resize;
+        }
+
+        .button {
+            background: #c0c0c0;
+            border: 2px solid;
+            border-color: #ffffff #000000 #000000 #ffffff;
+            padding: 8px 20px;
+            font-family: 'MS Sans Serif', Arial, sans-serif;
+            font-size: 13px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .button:active {
+            border-color: #000000 #ffffff #ffffff #000000;
+        }
+
+        .button:disabled {
+            color: #808080;
+            cursor: default;
+        }
+
+        .button-group {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .footer {
+            margin-top: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .social-link {
+            display: inline-block;
+        }
+
+        .social-link img {
+            width: 40px;
+            height: 40px;
+            transition: transform 0.2s;
+        }
+
+        .social-link:hover img {
+            transform: scale(1.1);
+        }
+
+        .ca-text {
+            background: #c0c0c0;
+            border: 2px solid;
+            border-color: #808080 #ffffff #ffffff #808080;
+            padding: 8px 16px;
+            font-family: 'MS Sans Serif', Arial, sans-serif;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="desktop">
+        <div class="header-logo">
+            <img src="https://cdn.prod.website-files.com/6740d85c4e3daeef29a89470/68dd7ad0e2fb292444620044_SOMBREROIFY-01-10-2025.png" alt="Sombreroify">
+        </div>
+
+        <div class="window">
+            <div class="title-bar">
+                <div class="title-text">
+                    <span>🌵</span>
+                    <span>Sombreroify.exe</span>
+                </div>
+                <div class="title-buttons">
+                    <div class="title-button">_</div>
+                    <div class="title-button">□</div>
+                    <div class="title-button">×</div>
+                </div>
+            </div>
+
+            <div class="window-content">
+                <div class="upload-area" id="uploadArea">
+                    <p style="font-size: 16px; margin-bottom: 10px;">📁 Click or drag to upload your profile picture</p>
+                    <p style="font-size: 12px; color: #666;">Supports JPG, PNG, GIF</p>
+                    <input type="file" id="fileInput" accept="image/*">
+                </div>
+
+                <div class="canvas-container" id="canvasContainer">
+                    <canvas id="canvas"></canvas>
+                    <div class="sombrero" id="sombrero" style="display: none;">
+                        <img src="https://cdn.prod.website-files.com/6740d85c4e3daeef29a89470/68dd7a9015f8d2337492a823_5bbe3942895b2.png" alt="Sombrero">
+                        <div class="resize-handle"></div>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="button" id="addSombreroBtn" disabled>Add Sombrero</button>
+                    <button class="button" id="downloadBtn" disabled>Download Image</button>
+                    <button class="button" id="resetBtn" disabled>Reset</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <a href="https://twitter.com" target="_blank" class="social-link">
+                <img src="https://cdn.prod.website-files.com/6740d85c4e3daeef29a89470/68d5c1872568958fd78018bb_twitter.png" alt="Twitter">
+            </a>
+            <a href="https://pump.fun" target="_blank" class="social-link">
+                <img src="https://cdn.prod.website-files.com/6740d85c4e3daeef29a89470/68c457abc0279df7fc3eb5a6_68c43c9ba4355c1b5e0d63da_68a663251731174a3dc255f1_689178ebf786d570b0c29520_tw%20(1)%20(1)%20(2).png" alt="Pump.fun">
+            </a>
+            <div class="ca-text">CA: SOON</div>
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const canvasContainer = document.getElementById('canvasContainer');
+        const sombrero = document.getElementById('sombrero');
+        const addSombreroBtn = document.getElementById('addSombreroBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const resizeHandle = sombrero.querySelector('.resize-handle');
+
+        let uploadedImage = null;
+        let isDragging = false;
+        let isResizing = false;
+        let startX, startY, startWidth, startHeight, startLeft, startTop;
+
+        // Upload handlers
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.background = '#e0e0e0';
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.background = 'white';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.background = 'white';
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                loadImage(file);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                loadImage(file);
+            }
+        });
+
+        function loadImage(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    uploadedImage = img;
+                    const maxWidth = 600;
+                    const scale = Math.min(1, maxWidth / img.width);
+                    canvas.width = img.width * scale;
+                    canvas.height = img.height * scale;
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    
+                    canvasContainer.style.display = 'block';
+                    addSombreroBtn.disabled = false;
+                    downloadBtn.disabled = false;
+                    resetBtn.disabled = false;
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Add sombrero
+        addSombreroBtn.addEventListener('click', () => {
+            sombrero.style.display = 'block';
+            sombrero.style.width = '150px';
+            sombrero.style.height = '150px';
+            sombrero.style.left = '50%';
+            sombrero.style.top = '20%';
+            sombrero.style.transform = 'translateX(-50%)';
+        });
+
+        // Drag sombrero
+        sombrero.addEventListener('mousedown', (e) => {
+            if (e.target === resizeHandle) return;
+            isDragging = true;
+            const rect = sombrero.getBoundingClientRect();
+            const containerRect = canvasContainer.getBoundingClientRect();
+            startX = e.clientX - rect.left;
+            startY = e.clientY - rect.top;
+            sombrero.style.cursor = 'grabbing';
+        });
+
+        // Resize sombrero
+        resizeHandle.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+            isResizing = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            startWidth = sombrero.offsetWidth;
+            startHeight = sombrero.offsetHeight;
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                const containerRect = canvasContainer.getBoundingClientRect();
+                let newLeft = e.clientX - containerRect.left - startX;
+                let newTop = e.clientY - containerRect.top - startY;
+                
+                newLeft = Math.max(0, Math.min(newLeft, containerRect.width - sombrero.offsetWidth));
+                newTop = Math.max(0, Math.min(newTop, containerRect.height - sombrero.offsetHeight));
+                
+                sombrero.style.left = newLeft + 'px';
+                sombrero.style.top = newTop + 'px';
+                sombrero.style.transform = 'none';
+            } else if (isResizing) {
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+                const newWidth = Math.max(50, startWidth + dx);
+                const newHeight = Math.max(50, startHeight + dy);
+                
+                sombrero.style.width = newWidth + 'px';
+                sombrero.style.height = newHeight + 'px';
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+            isResizing = false;
+            sombrero.style.cursor = 'move';
+        });
+
+        // Download
+        downloadBtn.addEventListener('click', () => {
+            const finalCanvas = document.createElement('canvas');
+            finalCanvas.width = canvas.width;
+            finalCanvas.height = canvas.height;
+            const finalCtx = finalCanvas.getContext('2d');
+            
+            finalCtx.drawImage(canvas, 0, 0);
+            
+            if (sombrero.style.display === 'block') {
+                const sombreroImg = sombrero.querySelector('img');
+                const rect = sombrero.getBoundingClientRect();
+                const containerRect = canvasContainer.getBoundingClientRect();
+                
+                const scaleX = canvas.width / containerRect.width;
+                const scaleY = canvas.height / containerRect.height;
+                
+                const x = (rect.left - containerRect.left) * scaleX;
+                const y = (rect.top - containerRect.top) * scaleY;
+                const w = rect.width * scaleX;
+                const h = rect.height * scaleY;
+                
+                finalCtx.drawImage(sombreroImg, x, y, w, h);
+            }
+            
+            const link = document.createElement('a');
+            link.download = 'sombreroified.png';
+            link.href = finalCanvas.toDataURL();
+            link.click();
+        });
+
+        // Reset
+        resetBtn.addEventListener('click', () => {
+            fileInput.value = '';
+            uploadedImage = null;
+            canvasContainer.style.display = 'none';
+            sombrero.style.display = 'none';
+            addSombreroBtn.disabled = true;
+            downloadBtn.disabled = true;
+            resetBtn.disabled = true;
+        });
+    </script>
+</body>
+</html>
